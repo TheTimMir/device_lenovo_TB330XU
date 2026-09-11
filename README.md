@@ -47,8 +47,9 @@ OrangeFox R12 device tree for the Lenovo Tab M11 (TB330XU), based on stock
 git clone ... device/lenovo/TB330XU
 
 source build/envsetup.sh
-lunch twrp_TB330XU-eng
+lunch omni_TB330XU-eng
 mka bootimage
+```
 
 ## Sources and references
 
