@@ -1,0 +1,60 @@
+import /init.recovery.microtrust.rc
+
+on early-init
+    # The MTK USB controller does not attach until the kernel init gate is set.
+    write /sys/module/musb_hdrc/parameters/kernel_init_done 1
+
+on init
+    install_keyring
+
+    setprop sys.usb.configfs 1
+    setprop sys.usb.controller "musb-hdrc"
+    setprop sys.usb.ffs.aio_compat 0
+
+# Wait until the generic recovery "fs" actions have mounted ConfigFS and
+# FunctionFS. Starting adbd from the earlier fs action can make it exit before
+# /dev/usb-ffs/adb exists, leaving the gadget permanently unbound.
+on boot
+    setprop sys.usb.config none
+    # cmode 1 is the stock USB data mode; cmode 2 leaves the UDC unattached.
+    write /sys/class/udc/musb-hdrc/device/cmode 1
+    setprop sys.usb.config adb
+
+on fs && property:sys.usb.configfs=1
+    mkdir /config/usb_gadget/g1/functions/ffs.mtp
+
+# Start ADB while waiting for both FunctionFS endpoints.
+on property:sys.usb.config=mtp,adb && property:sys.usb.configfs=1
+    start adbd
+
+# Bind the gadget only once both MTP and ADB have supplied descriptors.
+on property:sys.usb.config=mtp,adb && property:sys.usb.ffs.ready=1 && property:sys.usb.ffs.mtp.ready=1 && property:sys.usb.configfs=1
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "mtp_adb"
+    symlink /config/usb_gadget/g1/functions/ffs.mtp /config/usb_gadget/g1/configs/b.1/f1
+    symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f2
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
+    setprop sys.usb.state ${sys.usb.config}
+
+# The generic recovery rule removes only f1.
+on property:sys.usb.config=none && property:sys.usb.configfs=1
+    rm /config/usb_gadget/g1/configs/b.1/f2
+
+on post-fs
+    # Support A/B feature for EMMC and UFS boot region
+    symlink /dev/block/sda /dev/block/mmcblk0boot0
+    symlink /dev/block/sdb /dev/block/mmcblk0boot1
+    symlink /dev/block/mmcblk0boot0 /dev/block/platform/bootdevice/by-name/preloader_a
+    symlink /dev/block/mmcblk0boot1 /dev/block/platform/bootdevice/by-name/preloader_b
+    symlink /dev/block/mmcblk0boot0 /dev/block/by-name/preloader_a
+    symlink /dev/block/mmcblk0boot1 /dev/block/by-name/preloader_b
+
+    exec u:r:update_engine:s0 root root -- /system/bin/mtk_plpath_utils
+
+# OrangeFox/TWRP MTP uses FunctionFS.
+on post-fs
+    mkdir /dev/usb-ffs/mtp 0770 root root
+    mount functionfs mtp /dev/usb-ffs/mtp rmode=0770,fmode=0660,uid=0,gid=0
+
+# Barley code for OBARLEY-405 by zhoujj21 at 20230613
+on post-fs && property:ro.vendor.dynamicdata=disable
+	symlink /dev/block/platform/11230000.mmc/by-name/userdata /dev/block/dm-userdata

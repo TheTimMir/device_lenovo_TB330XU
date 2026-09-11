@@ -1,0 +1,61 @@
+# Stock MicroTrust TEE services needed to unwrap the metadata and FBE keys.
+# The binaries, libraries, and trusted applications are used from the stock
+# vendor partition, which recovery mounts read-only before decryption.
+service recovery.teei_daemon /vendor/bin/teei_daemon \
+    -r 020b0000000000000000000000000000 \
+    -r 020f0000000000000000000000000000 \
+    -r 06090000000000000000000000000000 \
+    -r 05120000000000000000000000000000 \
+    -r 40188311faf343488db888ad39496f9a \
+    -r 07060000000000000000000000007169 \
+    -r 4be4f7dc1f2c11e5b5f7727283247c7f \
+    -r 9073f03a9618383bb1856eb3f990babd \
+    -r 08050000000000000000000000003419 \
+    -r 5020170115e016302017012521300000 \
+    -r 0f5eed3c3b5a47afacca69a84bf0efad \
+    -r 07407000000000000000000000000000 \
+    -r 05160000000000000000000000000000 \
+    -r 91dba524a6e24909acc48abd7163121a \
+    -r 08070000000000000000000000008270 \
+    -r 09080000000000000000000000009381 \
+    -t 08030000000000000000000000000000 \
+    -t 85f630e0f0964c5fa2cc268ce04e3da3 \
+    -t 98fb95bcb4bf42d26473eae48690d7ea \
+    -t 7b66512021214487ba710a51d7ea78fe \
+    -t 09010000000000000000000000000000
+    class core
+    user root
+    group root system
+    disabled
+    seclabel u:r:recovery:s0
+
+service recovery.keymaster-4-1 /vendor/bin/hw/android.hardware.keymaster@4.1-service.beanpod
+    interface android.hardware.keymaster@4.0::IKeymasterDevice default
+    interface android.hardware.keymaster@4.1::IKeymasterDevice default
+    class early_hal
+    user root
+    group root system drmrpc
+    disabled
+    seclabel u:r:recovery:s0
+
+service recovery.gatekeeper-1-0 /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
+    interface android.hardware.gatekeeper@1.0::IGatekeeper default
+    class hal
+    user root
+    group root system
+    disabled
+    seclabel u:r:recovery:s0
+
+on property:twrp.apex.loaded=true
+    chmod 0660 /dev/teei_client
+    chmod 0660 /dev/teei_config
+    chmod 0660 /dev/tz_vfs
+    chmod 0660 /dev/ut_keymaster
+    chmod 0660 /dev/mmcblk0rpmb
+    start recovery.teei_daemon
+    start recovery.keymaster-4-1
+    start recovery.gatekeeper-1-0
+    # Recovery reaches metadata decryption before the generic late-init action
+    # starts Keystore2. Start it with the MTK secure stack so vold does not
+    # block on a late Binder service while the splash screen is displayed.
+    start keystore2

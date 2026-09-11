@@ -1,0 +1,47 @@
+# Logical partitions
+/system_image          emmc    /dev/block/mapper/system_a                   flags=backup=1;flashimg=1;display="System Image"
+/vendor_image          emmc    /dev/block/mapper/vendor_a                   flags=backup=1;flashimg=1;display="Vendor Image"
+/product_image         emmc    /dev/block/mapper/product_a                  flags=backup=1;flashimg=1;display="Product Image"
+
+# Physical partitions with TWRP flags
+/metadata              ext4    /dev/block/by-name/md_udc                    flags=display="Metadata";backup=1
+/data                  f2fs    /dev/block/by-name/userdata                  flags=fileencryption=aes-256-xts:aes-256-cts:v2;keydirectory=/metadata/vold/metadata_encryption
+/vendor                ext4    vendor                                       flags=display="Vendor";logical;slotselect;mounttodecrypt;ignoreblkid;fsflags=ro
+/boot                  emmc    /dev/block/by-name/boot                      flags=display="Boot";backup=1;flashimg=1;slotselect
+/vendor_boot           emmc    /dev/block/by-name/vendor_boot               flags=display="Vendor Boot";backup=1;flashimg=1;slotselect
+/dtbo                  emmc    /dev/block/by-name/dtbo                      flags=display="DTBO";backup=1;flashimg=1;slotselect
+/vbmeta                emmc    /dev/block/by-name/vbmeta                    flags=display="VBMeta";backup=1;flashimg=1;slotselect
+/vbmeta_system         emmc    /dev/block/by-name/vbmeta_system             flags=display="VBMeta System";backup=1;flashimg=1;slotselect
+/vbmeta_vendor         emmc    /dev/block/by-name/vbmeta_vendor             flags=display="VBMeta Vendor";backup=1;flashimg=1;slotselect
+
+/mnt/vendor/protect_f  ext4    /dev/block/by-name/protect1                  flags=display="Protect_F";backup=1
+/mnt/vendor/protect_s  ext4    /dev/block/by-name/protect2                  flags=display="Protect_S";backup=1
+/mnt/vendor/nvdata     ext4    /dev/block/by-name/nvdata                    flags=display="NVData";backup=1
+/mnt/vendor/nvcfg      ext4    /dev/block/by-name/nvcfg                     flags=display="NVCfg";backup=1
+/lenovocust            ext4    /dev/block/by-name/lenovocust                flags=display="LenovoCust";backup=1
+/persist               ext4    /dev/block/by-name/persist                   flags=display="Persist";backup=1
+/persistent            emmc    /dev/block/by-name/frp                       flags=display="FRP";backup=1
+/nvram                 emmc    /dev/block/by-name/nvram                     flags=display="NVRam";backup=1
+/proinfo               emmc    /dev/block/by-name/proinfo                   flags=display="Proinfo";backup=1
+/lenovoraw             emmc    /dev/block/by-name/lenovoraw                 flags=display="LenovoRaw"
+/bootloader            emmc    /dev/block/by-name/lk                        flags=display="Bootloader (lk)";backup=1
+/bootloader2           emmc    /dev/block/by-name/lk2                       flags=display="Bootloader2 (lk2)";backup=1
+/misc                  emmc    /dev/block/by-name/misc                      flags=display="Misc"
+/para                  emmc    /dev/block/by-name/para                      flags=display="Para"
+/logo                  emmc    /dev/block/by-name/logo                      flags=display="Logo";backup=1
+/expdb                 emmc    /dev/block/by-name/expdb                     flags=display="ExpDB"
+/seccfg                emmc    /dev/block/by-name/seccfg                    flags=display="SecCFG"
+/tee1                  emmc    /dev/block/by-name/tee1                      flags=display="Tee1";backup=1
+/tee2                  emmc    /dev/block/by-name/tee2                      flags=display="Tee2";backup=1
+/scp1                  emmc    /dev/block/by-name/scp1                      flags=display="SCP1"
+/scp2                  emmc    /dev/block/by-name/scp2                      flags=display="SCP2"
+/sspm_1                emmc    /dev/block/by-name/sspm_1                    flags=display="SSPM1"
+/sspm_2                emmc    /dev/block/by-name/sspm_2                    flags=display="SSPM2"
+/md1img                emmc    /dev/block/by-name/md1img                    flags=display="Modem Image";backup=1
+/spmfw                 emmc    /dev/block/by-name/spmfw                     flags=display="SPMFW"
+/boot_para             emmc    /dev/block/by-name/boot_para                 flags=display="Boot Para"
+/otp                   emmc    /dev/block/by-name/otp                       flags=display="OTP"
+
+# Removable storage
+/external_sd           auto    /dev/block/mmcblk1p1    /dev/block/mmcblk1   flags=display="MicroSD";storage;wipeingui;removable
+/usb_otg               auto    /dev/block/sda1         /dev/block/sda       flags=display="USB-OTG";storage;wipeingui;removable
