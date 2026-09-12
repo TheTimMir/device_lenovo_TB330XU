@@ -53,8 +53,8 @@ mka bootimage
 
 ## Sources and references
 
-[`nazzar4ik/tb330xu-unpacked-hovatek-twrp`](git://github.com/nazzar4ik/tb330xu-unpacked-hovatek-twrp.git)
-[`t0mc1k/TB330FU-TWRP`](git://github.com/t0mc1k/TB330FU-TWRP.git)
+[`nazzar4ik/tb330xu-unpacked-hovatek-twrp`](https://github.com/nazzar4ik/tb330xu-unpacked-hovatek-twrp.git)
+[`t0mc1k/TB330FU-TWRP`](https://github.com/t0mc1k/TB330FU-TWRP.git)
 
 ## AI assistance
 
