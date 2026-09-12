@@ -11,10 +11,7 @@ DEVICE_PATH := device/lenovo/TB330XU
 AB_OTA_UPDATER := true
 AB_OTA_PARTITIONS += \
     boot \
-    product \
     system \
-    vbmeta_system \
-    vbmeta_vendor \
     vendor
 
 BOARD_USES_RECOVERY_AS_BOOT := true
@@ -22,18 +19,18 @@ TW_NO_FASTBOOT_BOOT := true
 
 # Architecture
 TARGET_ARCH := arm64
-TARGET_ARCH_VARIANT := armv8-a
+TARGET_ARCH_VARIANT := armv8-2a-dotprod
 TARGET_CPU_ABI := arm64-v8a
 TARGET_CPU_ABI2 := 
 TARGET_CPU_VARIANT := generic
-TARGET_CPU_VARIANT_RUNTIME := cortex-a53
+TARGET_CPU_VARIANT_RUNTIME := cortex-a75
 
 TARGET_2ND_ARCH := arm
-TARGET_2ND_ARCH_VARIANT := armv7-a-neon
+TARGET_2ND_ARCH_VARIANT := armv8-2a
 TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
 TARGET_2ND_CPU_VARIANT := generic
-TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a53
+TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a55
 
 # APEX
 OVERRIDE_TARGET_FLATTEN_APEX := true
@@ -101,6 +98,7 @@ BOARD_USE_DYNAMIC_PARTITIONS := true
 
 
 # Platform
+# MT8786 / Helio G88 uses MediaTek's mt6768 platform namespace in stock
 TARGET_BOARD_PLATFORM := mt6768
 
 # Recovery
