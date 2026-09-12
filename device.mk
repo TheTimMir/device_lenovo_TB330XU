@@ -29,7 +29,7 @@ PRODUCT_PACKAGES += \
     
 # USB ConfigFS properties
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
-    persist.sys.usb.config=adb,mtp \
+    persist.sys.usb.config=mtp,adb \
     persist.adb.nonblocking_ffs=1 \
     ro.adb.secure=0 \
     ro.recovery.usb.vid=18D1 \
