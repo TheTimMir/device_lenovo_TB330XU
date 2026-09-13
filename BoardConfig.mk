@@ -104,7 +104,6 @@ TARGET_BOARD_PLATFORM := mt6768
 # Recovery
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery.fstab
 TARGET_RECOVERY_PIXEL_FORMAT := BGRA_8888
-TARGET_RECOVERY_QCOM_RTC_FIX := true
 TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 # OrangeFox's size-reduction pass uses UPX on large executables. Android init
@@ -113,8 +112,7 @@ TARGET_USERIMAGES_USE_F2FS := true
 # the ramdisk is packed; all other executables remain compressed.
 # Expand PRODUCT_OUT when the recovery packaging rule runs, not while this
 # BoardConfig is initially parsed.
-BOARD_RECOVERY_IMAGE_PREPARE = $(DEVICE_PATH)/recovery/restore-unpacked-init.sh $(PRODUCT_OUT)/recovery/root
-
+BOARD_RECOVERY_IMAGE_PREPARE = $(DEVICE_PATH)/recovery/prepare-recovery-ramdisk.sh $(PRODUCT_OUT)/recovery/root
 # Stock uses FBE v2 on top of metadata encryption. Without crypto support the
 # raw userdata device contains encrypted sectors and cannot be probed.
 TW_INCLUDE_CRYPTO := true

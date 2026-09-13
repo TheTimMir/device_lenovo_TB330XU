@@ -36,6 +36,7 @@ OrangeFox R12 device tree for the Lenovo Tab M11 (TB330XU), based on stock
 - Keep **"Unmount Vendor before installing ZIP"** disabled. The stock MicroTrust TEE,
   Keymaster and Gatekeeper services are executed from the vendor partition and keep it in use
   while recovery is running.
+- The TB330XU has a 32 MiB boot partition. To leave enough space for Magisk to patch the recovery-as-boot image, this build keeps only English, Spanish and Russian recovery UI languages. If you wish to add yours, change the set in [recovery/prepare-recovery-ramdisk.sh](recovery/prepare-recovery-ramdisk.sh)
 
 ## Building
 
@@ -53,8 +54,8 @@ mka bootimage
 
 ## Sources and references
 
-[`nazzar4ik/tb330xu-unpacked-hovatek-twrp`](https://github.com/nazzar4ik/tb330xu-unpacked-hovatek-twrp.git)
-[`t0mc1k/TB330FU-TWRP`](https://github.com/t0mc1k/TB330FU-TWRP.git)
+- [`nazzar4ik/tb330xu-unpacked-hovatek-twrp`](https://github.com/nazzar4ik/tb330xu-unpacked-hovatek-twrp.git)
+- [`t0mc1k/TB330FU-TWRP`](https://github.com/t0mc1k/TB330FU-TWRP.git)
 
 ## AI assistance
 
