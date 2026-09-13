@@ -56,7 +56,8 @@ mka bootimage
 
 - [`nazzar4ik/tb330xu-unpacked-hovatek-twrp`](https://github.com/nazzar4ik/tb330xu-unpacked-hovatek-twrp.git)
 - [`t0mc1k/TB330FU-TWRP`](https://github.com/t0mc1k/TB330FU-TWRP.git)
-
+- [TheGamerKing561](https://github.com/TheGamerKing561) — the GitHub Actions build workflow [OrangeFox-Action-Builder](https://github.com/TheGamerKing561/OrangeFox-Action-Builder).
+- 
 ## AI assistance
 
 OpenAI Codex was used as a development assistant. 

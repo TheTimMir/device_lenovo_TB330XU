@@ -1,0 +1,223 @@
+name: OrangeFox - Build TB330XU
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: orangefox-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build OrangeFox
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+
+    env:
+      MANIFEST_BRANCH: "12.1"
+      DEVICE_PATH: device/lenovo/TB330XU
+      DEVICE_NAME: TB330XU
+      LUNCH_TARGET: omni_TB330XU-eng
+      OF_ROOT: ${{ github.workspace }}/OrangeFox/fox_12.1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: rokibhasansagar/slimhub_actions@main
+
+      - name: Add swap
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 24
+
+      - name: Set up Android build environment
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y aria2 git
+
+          git clone \
+            --depth=1 \
+            --branch master \
+            https://gitlab.com/OrangeFox/misc/scripts.git \
+            /tmp/orangefox-scripts
+
+          sudo bash /tmp/orangefox-scripts/setup/android_build_env.sh
+
+      - name: Sync OrangeFox
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          mkdir -p "${GITHUB_WORKSPACE}/OrangeFox"
+          cd "${GITHUB_WORKSPACE}/OrangeFox"
+
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email \
+            "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+
+          git clone \
+            --depth=1 \
+            --branch master \
+            https://gitlab.com/OrangeFox/sync.git \
+            sync
+
+          cd sync
+
+          ./orangefox_sync.sh \
+            --branch "${MANIFEST_BRANCH}" \
+            --path "${OF_ROOT}"
+
+      - name: Clone TB330XU device tree
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          cd "${OF_ROOT}"
+
+          git clone \
+            "https://github.com/${GITHUB_REPOSITORY}.git" \
+            "${DEVICE_PATH}"
+
+          cd "${DEVICE_PATH}"
+
+          # Build the exact commit which launched this workflow.
+          git checkout "${GITHUB_SHA}"
+
+          DEVICE_COMMIT="$(git rev-parse HEAD)"
+          DEVICE_SHORT_COMMIT="$(git rev-parse --short HEAD)"
+          DEVICE_COMMIT_TITLE="$(git log -1 --pretty=%s)"
+          DEVICE_COMMIT_DATE="$(git log -1 --date=format:%Y-%m-%d --pretty=%cd)"
+
+          {
+            echo "DEVICE_COMMIT=${DEVICE_COMMIT}"
+            echo "DEVICE_SHORT_COMMIT=${DEVICE_SHORT_COMMIT}"
+            echo "DEVICE_COMMIT_TITLE=${DEVICE_COMMIT_TITLE}"
+            echo "DEVICE_COMMIT_DATE=${DEVICE_COMMIT_DATE}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Record OrangeFox source revision
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          cd "${OF_ROOT}/bootable/recovery"
+
+          OF_COMMIT="$(git rev-parse HEAD)"
+          OF_SHORT_COMMIT="$(git rev-parse --short HEAD)"
+          OF_COMMIT_TITLE="$(git log -1 --pretty=%s)"
+          OF_COMMIT_DATE="$(git log -1 --date=format:%Y-%m-%d --pretty=%cd)"
+
+          {
+            echo "OF_COMMIT=${OF_COMMIT}"
+            echo "OF_SHORT_COMMIT=${OF_SHORT_COMMIT}"
+            echo "OF_COMMIT_TITLE=${OF_COMMIT_TITLE}"
+            echo "OF_COMMIT_DATE=${OF_COMMIT_DATE}"
+          } >> "${GITHUB_ENV}"
+
+      - name: Set build information
+        shell: bash
+        run: |
+          echo "BUILD_DATE=$(date -u +'%Y%m%d-%H%M%S')" >> "${GITHUB_ENV}"
+
+      - name: Build OrangeFox
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          cd "${OF_ROOT}"
+
+          # envsetup.sh can contain commands whose return code is non-zero
+          # despite the environment being configured correctly.
+          set +e
+          source build/envsetup.sh
+          ENVSETUP_STATUS=$?
+          set -e
+
+          if [ "${ENVSETUP_STATUS}" -ne 0 ]; then
+            echo "::warning::envsetup.sh returned ${ENVSETUP_STATUS}"
+          fi
+
+          export ALLOW_MISSING_DEPENDENCIES=true
+
+          lunch "${LUNCH_TARGET}"
+
+          # TB330XU is recovery-as-boot.
+          mka bootimage
+
+      - name: Collect build outputs
+        shell: bash
+        run: |
+          set -eo pipefail
+
+          PRODUCT_OUT="${OF_ROOT}/out/target/product/${DEVICE_NAME}"
+          ARTIFACTS="${GITHUB_WORKSPACE}/artifacts"
+
+          mkdir -p "${ARTIFACTS}"
+
+          echo "Contents of PRODUCT_OUT:"
+          ls -lah "${PRODUCT_OUT}"
+
+          if [ ! -f "${PRODUCT_OUT}/boot.img" ]; then
+            echo "::error::boot.img was not produced"
+            exit 1
+          fi
+
+          cp \
+            "${PRODUCT_OUT}/boot.img" \
+            "${ARTIFACTS}/OrangeFox-${DEVICE_NAME}-${BUILD_DATE}-${DEVICE_SHORT_COMMIT}-boot.img"
+
+          # OrangeFox may additionally produce its own packaged image/ZIP.
+          for file in \
+            "${PRODUCT_OUT}"/OrangeFox*.img \
+            "${PRODUCT_OUT}"/OrangeFox*.zip
+          do
+            [ -e "${file}" ] || continue
+            cp "${file}" "${ARTIFACTS}/"
+          done
+
+          cd "${ARTIFACTS}"
+          sha256sum * > SHA256SUMS
+
+          echo
+          echo "Artifacts:"
+          ls -lah
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrangeFox-${{ env.DEVICE_NAME }}-${{ env.DEVICE_SHORT_COMMIT }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create GitHub prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.DEVICE_NAME }}-${{ env.BUILD_DATE }}-${{ env.DEVICE_SHORT_COMMIT }}
+          name: OrangeFox for ${{ env.DEVICE_NAME }} (${{ env.DEVICE_SHORT_COMMIT }})
+          prerelease: true
+          files: artifacts/*
+          body: |
+            OrangeFox Recovery build for Lenovo Tab M11 (TB330XU).
+
+            OrangeFox branch: `${{ env.MANIFEST_BRANCH }}`
+            Build target: `bootimage`
+            Lunch target: `${{ env.LUNCH_TARGET }}`
+
+            Device tree commit:
+            [${{ env.DEVICE_SHORT_COMMIT }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ env.DEVICE_COMMIT }})
+            `${{ env.DEVICE_COMMIT_TITLE }}`
+            Date: ${{ env.DEVICE_COMMIT_DATE }}
+
+            OrangeFox Recovery source:
+            [${{ env.OF_SHORT_COMMIT }}](https://gitlab.com/OrangeFox/bootable/Recovery/-/commit/${{ env.OF_COMMIT }})
+            `${{ env.OF_COMMIT_TITLE }}`
+            Date: ${{ env.OF_COMMIT_DATE }}
